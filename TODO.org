@@ -1,0 +1,132 @@
+* om
+** libraries to be used
+*** HHNHGG 1.3 compatibility
+*** seesaw
+**** FUCKING LEARN SWING
+*** cake
+**** need it to be compatible with 1.3, how to handle this?
+***** wait for it to be compatible
+***** fork and pull request
+**** use it as a lib, need to read bin/cake (ruby, ask yawn for help)
+**** need for it to be on clojars
+***** send an issue
+***** mantain an own frozen version
+****** fucking annoying in the long run
+*** debug repl
+*** new clojure contribs
+** features
+*** project management
+**** project management backend
+***** cake or leiningen?
+****** for now cake seems the better solution
+***** org.clojure maven lookup
+***** dynamic project.clj management
+***** libraries watching
+
+**** lang support
+***** clojure
+***** clojurescript later
+***** check if a clojureCLR support will ever be possible
+*** syntax highlighting
+**** symbols
+**** keywords
+**** strings
+**** special forms
+**** classes, method calls
+***** investigate how EMACS does this
+****** probably looking for Capitalized
+**** def*, fn special highlighting
+***** different color
+***** second parameter highlighted
+**** metadata
+***** should ^:meta be coloured as if it was ^meta or :meta?
+***** ^{:meta data} <= colourized ^{}?
+**** comments
+**** bold parenthesis on cursor over
+*** intentation
+**** should be allowed to manually break indentation?
+***** no, so no need to use TAB
+****** positive so it will not mess with autocompletion
+**** auto indentation
+***** macro && function special indentation rules
+****** read time static detection
+****** write-time dynamic detection
+******* how to deal with edits?
+**** if line is longer than screen width, use a newline
+*** autocompletion
+**** is it possible to guess the class?
+***** static lexical check
+**** inline suggestion on type
+***** adjust suggestion on type
+***** use smart guess
+****** static usage analysis on project
+****** static usage analysis on core.clj
+****** static usage analysis on code load
+****** dynamic usage analysis on write
+**** show completion applet on TAB
+***** should it be ordered depending on smart guess or alphabetically?
+****** let the user chose the preferred method
+***** enter to complete, tab to select second match, arrows to move up and down
+***** after 0.5 delay show doc on applet
+***** show Class/type as in xcode
+**** fuzzy completion?
+*** paredit
+**** parenthesis global manipulation
+***** locked parenthesis deletion on non empty lists
+**** clooj like mismatched parenthesis highlighting
+*** mode line
+**** show arg arity
+***** highlight current arg?
+****** bold it
+****** deal with binding => [map] in doc string?
+*** line numbering
+*** interactive buffer
+**** REPL
+***** support for clojure[script] repl envs
+***** better autocompletion than in the text buffer
+****** use clojure.reflect
+***** enter sends when cursor is after last closing parenthesis otherwise indent
+***** enable REPL reloading
+***** REPL and text buffer intercomunication
+****** eval defn
+****** compile buffer
+****** ns loading
+**** shell
+***** how do deal with this? ( ._.)
+*** automatic testing
+**** constant testing on save
+**** failed/passed tests reporting
+*** debugging
+**** how to signale on the text buffer the fn that threw an exception?
+***** check line numbering, red label until recompiling
+**** should be enabled anyway or using a debug mode?
+**** inspector
+***** where to place it?
+***** how to display it?
+***** how should this work?
+**** debug REPL
+***** in the interactive buffer?
+****** seems the only way to place it
+***** how should this work?
+****** SLDB is cool, how to integrate its experience with om's UI?
+****** how to inspect values?
+****** how to rebind values?
+****** how to deal with stacktraces?
+***** use debug repl by hugo duncan
+**** breakpoints?
+**** source following?
+***** with value inspecting?
+**** see swank-clojure and ritz
+*** documentation
+**** javadoc
+**** clojure.repl/doc
+**** where to place it?
+**** search with apropos like matching?
+*** ns explorer
+**** jump on select
+*** jump at definition
+*** project tree
+*** plugins
+**** git support
+**** how to do this?
+*** *basic* java suport
