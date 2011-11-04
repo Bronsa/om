@@ -1,4 +1,5 @@
-(ns om.parser.utils)
+(ns om.parser.utils
+  (require [om.parser.zip :as z]))
 
 (defn tok-length [tok]
   (if (string? tok)
@@ -28,6 +29,8 @@
   (try
     (= "close" (.substring (str tag) 1 6))
     (catch Exception _ false)))
+
+(defn tag [n] (:tag (z/node n)))
 
 (defn escape-str [body]
   (.replaceAll (.replace body "\\" "\\\\")  "([^\\\\]*?)\\\"(.*?)" "$1\\\\\"$2"))

@@ -6,5 +6,4 @@
 (defn -main [& _]
   (-> (:frame @app)
       show!)
-  (-> tree-viewer show!) ;; debug thing
-)
+  (-> tree-viewer show!))  ;; debug thing
