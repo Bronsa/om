@@ -86,7 +86,7 @@
       (recur (left l))
       l)))
 
-(defdir next-content [tree]
+(defdir next-node [tree]
   (or (down tree)
       (or (right tree)
           (loop [t (up tree)]
@@ -94,7 +94,7 @@
                 (if (up t)
                   (recur (up t))))))))
 
-(defdir prev-content [tree]
+(defdir prev-node [tree]
   (when-not (root? tree)
     (if-let [t (left tree)]
       (if (down t)
@@ -110,21 +110,26 @@
         t)
       (up tree))))
 
-(defdir next [tree]
-  (if-not (= (path tree) (path (inferior tree)))
-    (inferior tree)
-    (loop [t (up tree)]
-      (if (right t)
-        (inferior (right t))
-        (if (up t)
-          (recur (up t)))))))
+;; (defdir next [tree]
+;;   (if-not (= (path tree) (path (inferior tree)))
+;;     (inferior tree)
+;;     (loop [t (up tree)]
+;;       (if (right t)
+;;         (inferior (right t))
+;;         (if (up t)
+;;           (recur (up t)))))))
 
-;;rewrite this without using prev-content
+(defdir next [tree]
+  (loop [p (next-node tree)]
+    (if (string? (node (down p))) p
+        (if (next-node p)
+         (recur (next-node p))))))
+
 (defdir prev [tree]
-  (loop [p (prev-content tree)]
-    (if (string? (node p)) p
-        (if (prev-content p)
-         (recur (prev-content p))))))
+  (loop [p (prev-node tree)]
+    (if (string? (node (down p))) p
+        (if (prev-node p)
+         (recur (prev-node p))))))
 
 (defn insert-left [tree node]
   (let [path (path tree)

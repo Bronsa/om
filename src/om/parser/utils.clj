@@ -1,39 +1,241 @@
 (ns om.parser.utils
-  (require [om.parser.zip :as z]))
+  (:require [om.parser.zip :as z]
+            [om.parser.grammar :as g]))
 
-(defn tok-length [tok]
+(declare closing-tag?
+         escape-str
+         lengths)
+
+(defn- tree-to-str [c]
+  (cond
+   (string? c) c
+   (and (vector? (:content c))
+        (= :string-body (:tag (get (:content c) 1 nil)))
+        (not (closing-tag? (:tag (get (:content c) 2 nil)))))
+   (let [c (:content c)
+         frst (str (first (:content (first c))) (first (:content (second c))))
+         lst (first (:content (last c)))
+         body (drop 2 (butlast c))]
+     (str (apply str frst (map #(-> % tree-to-str escape-str) body)) lst))
+   :else
+   (apply str (map tree-to-str (:content c)))))
+
+(defrecord Node [tag content tokens-length length]
+  Object
+  (toString [this]
+    (tree-to-str this)))
+
+(defn make-node [t c]
+  (let [[len tok-len] (lengths c)
+        t (if (= t :net.cgrand.parsley/unfinished)
+            :uncomplete
+            t)]
+    (Node. t c tok-len len)))
+
+(defn make-unexpected [l]
+  (make-node :unexpected [l]))
+
+(defn tok-length
+  "Return token lenght"
+  [tok]
   (if (string? tok)
     (.length ^String tok)
     (:length tok 0)))
 
-(defn lengths [c]
+(defn lengths
+  "Return a vector with the lenghts of sub-expressions"
+  [c]
   (let [tok-l (map tok-length c)]
     [(apply + tok-l) tok-l]))
 
-(def whitespaces #{:whitespace :comment :discard})
+(defn- aim [node off]
+  (let [sums (reductions + (:tokens-length node))]
+    (loop [s sums i 0 p 0]
+      (if (< (first s) off)
+        (recur (rest s) (inc i) (first s))
+        [i (- off p)]))))
 
-(defn opening-tag? [tag]
+(defn- zoom-in [zip offset]
+  (if (string? (z/node (z/down zip)))
+    zip
+    (if (= (count (:tokens-length (z/node zip))) 1)
+      (recur (z/down zip) offset)
+      (let [[pos new-off] (aim (z/node zip) offset)
+            new-loc (-> zip z/down (z/right pos))]
+        (recur new-loc new-off)))))
+
+(defn node-from-offset [tree offset]
+  "Given a tree and an offset, returns a zip pointing to the node corresponding to the offset."
+  (if-not (< (:length tree) offset)
+    (if (= (:length tree) offset)
+      (zoom-in (z/zip (update-in (update-in (update-in tree [:content] conj (make-node :end [" "]))
+                                            [:tokens-length] concat [1])
+                                 [:length] inc)) (inc offset)) ;; dirty hack
+      (zoom-in (z/zip tree) (inc offset)))))
+
+(defn starting-offset [zip]
+  "Given a zip returns the starting offset of the pointed node"
+  (if zip
+    (loop [z (z/up zip) pos (last (z/path zip)) off 0]
+      (if (z/root? z)
+        (apply + off (take pos (:tokens-length (z/node z))))
+        (recur (z/up z) (last (z/path z)) (apply + off (take pos (:tokens-length (z/node z)))))))))
+
+(defn next-offset [zip]
+  "Returns the starting offset of the next node"
+  (if (string? (z/node zip))
+    (recur (z/up zip))
+    (starting-offset (z/next zip))))
+
+(defn prev-offset [zip]
+  "Returns the starting offset of the previous node"
+  (if (string? (z/node zip))
+    (recur (z/up zip))
+    (starting-offset (z/prev zip))))
+
+(defn tag
+  "Return the tag of the currently selected node in a zip"
+  [zip]
+  (if (string? (z/node zip))
+    (recur (z/up zip))
+    (:tag (z/node zip))))
+
+(defn opening-tag?
+  "Check if tag is a pair opener"
+  [tag]
   (try
     (= "open" (.substring (str tag) 1 5))
     (catch Exception _ false)))
 
-(defn starting-tag? [tag]
+(defn starting-tag?
+  "Check if tag is a read-macro"
+  [tag]
   (try
     (= "start" (.substring (str tag) 1 6))
     (catch Exception _ false)))
 
 (def starting-or-opening-tag?
+  "Returns true either if tag is a read-macro or a pair opener"
   (some-fn opening-tag? starting-tag?))
 
-(defn closing-tag? [tag]
+(defn closing-tag?
+  "Check if tag is pair closer"
+  [tag]
   (try
     (= "close" (.substring (str tag) 1 6))
     (catch Exception _ false)))
 
-(defn tag [n] (:tag (z/node n)))
+(def opening-or-closing-tag?
+  "Returns true if tag is a pair delimiter"
+  (some-fn opening-tag? closing-tag?))
 
-(defn escape-str [body]
+(defn opening-tag
+  "Return a compound keyword of \"open-\" and type"
+  [type]
+  (if type
+    (keyword (str "open-" (.substring (str type) 1)))))
+
+(defn closing-tag
+  "Return a compound keyword of \"close-\" and type"
+  [type]
+  (if type
+   (keyword (str "close-" (.substring (str type) 1)))))
+
+(defn in-string?
+  "Checks if the cursor is inside a string/regex body, or selecting their closing paren"
+  [zip]
+  (if (string? (z/node zip))
+    (recur (z/up zip))
+    (#{:string-body :close-string :close-regex} (tag zip))))
+
+(defn string-body?
+  "Checks if the cursor is inside a string/regex body"
+  [zip]
+  (#{:string-body} (in-string? zip)))
+
+(defn escape-str
+  "Escape backslashes and double-quotes in a string"
+  [^String body]
   (.replaceAll (.replace body "\\" "\\\\")  "([^\\\\]*?)\\\"(.*?)" "$1\\\\\"$2"))
 
-(defn descape-str [body]
+(defn descape-str
+  "Revert the effects of escape-str"
+  [^String body]
   (.replace (.replace body "\\\"" "\"") "\\\\" "\\"))
+
+(defn coll-type
+  "Returns a keyword matching the collection type given the a closing or an opening tag"
+  [tag]
+  (if tag
+    (keyword (apply str (rest (.split (str tag) "-"))))))
+
+(defn opening-str
+  "Returns a string representation of the opening paren of the specified type (type must be a valid keyword type)"
+  [type]
+  (str ((opening-tag type) g/parser-grammar)))
+
+(defn closing-str
+  "Returns a string representation of the closing paren of the specified type (type must be a valid keyword type)"
+  [type]
+  (str ((closing-tag type) g/parser-grammar)))
+
+(defn uncomplete?
+  "Checks if outer expression is uncomplete"
+  [zip]
+  (#{:uncomplete}
+   (tag (z/up zip
+              (if ((some-fn string? (comp opening-tag? tag))
+                   (z/node zip)) 2)))))
+
+
+;; deeply broken section ^_^
+(defn opening-paren
+  "Returns a new zip pointing to the opening paren of the currently focused expression"
+  [zip]
+  (if (string? (z/node zip))
+    (recur (z/up zip))
+    (if (opening-tag? (tag zip))
+      (if (z/left (z/up zip))
+       (let [prev-node (z/left (z/up zip))]
+         (if ((every-pred opening-tag (complement starting-tag?)) (tag prev-node))
+           (z/down prev-node)
+           (recur prev-node))))
+      (if (opening-tag? (tag (z/leftmost zip)))
+       (z/down (z/leftmost zip))
+       (if (z/up zip)
+         (recur (z/up zip)))))))
+
+(defn closing-paren
+  "Returns a new zip pointing to the closing paren of the currently focused expression"
+  [zip]
+  (if (string? (z/node zip))
+    (recur (z/up zip))
+    (if (opening-tag? (tag zip))
+      (if (z/left (z/up zip))
+       (let [prev-node (z/left (z/up zip))]
+         (if (closing-tag? (tag prev-node))
+           (z/down prev-node)
+           (recur prev-node))))
+      (if (closing-tag? (tag (z/rightmost zip)))
+       (z/down (z/rightmost zip))
+       (if (z/up zip)
+         (recur (z/up zip)))))))
+
+(defn prev-matching-opening-paren
+  "Returns a new zip pointing to the closing paren of the specified type if the focused expression is inside it"
+  [zip type]
+  (loop [p-paren (opening-paren zip)]
+    (if p-paren
+      (if (= (opening-tag type) (tag p-paren))
+        p-paren
+        (recur (opening-paren (z/up p-paren)))))))
+
+;; bbbbroken
+(defn next-matching-closing-paren
+  "Returns a new zip pointing to the closing paren of the specified type if the focused expression is inside it"
+  [zip type]
+  (loop [p-paren (closing-paren zip)]
+    (if p-paren
+      (if (= (closing-tag type) (tag p-paren))
+        p-paren
+        (recur (closing-paren (z/next p-paren)))))))
