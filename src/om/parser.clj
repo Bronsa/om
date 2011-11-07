@@ -13,7 +13,7 @@
          (reduce concat parser-grammar)))
 
 (defn edit-buffer [buffer offset len text]
-  (let [text (or text "")]
+  (let [text (str (or text "") " ")]
     (p/edit (or buffer (p/incremental-buffer parser))
             offset len text)))
 
@@ -21,4 +21,4 @@
   (p/parse-tree buffer))
 
 (defn parse [^String text]
-  (parser text))
+  (parser (str text " ")))

@@ -23,13 +23,12 @@
 (defrecord Node [tag content tokens-length length]
   Object
   (toString [this]
-    (tree-to-str this)))
+    (let [s (tree-to-str this)]
+      (.substring s 0 (dec (.length s)))))) ;; ugly hack
 
 (defn make-node [t c]
-  (let [[len tok-len] (lengths c)
-        t (if (= t :net.cgrand.parsley/unfinished)
-            :uncomplete
-            t)]
+  (let [t (if (#{:net.cgrand.parsley/unfinished} t) :uncomplete t)
+        [len tok-len] (lengths c)]
     (Node. t c tok-len len)))
 
 (defn make-unexpected [l]
@@ -66,12 +65,8 @@
 
 (defn node-from-offset [tree offset]
   "Given a tree and an offset, returns a zip pointing to the node corresponding to the offset."
-  (if-not (< (:length tree) offset)
-    (if (= (:length tree) offset)
-      (zoom-in (z/zip (update-in (update-in (update-in tree [:content] conj (make-node :end [" "]))
-                                            [:tokens-length] concat [1])
-                                 [:length] inc)) (inc offset)) ;; dirty hack
-      (zoom-in (z/zip tree) (inc offset)))))
+  (if-not (<= (:length tree) offset)
+    (zoom-in (z/zip tree) (inc offset))))
 
 (defn starting-offset [zip]
   "Given a zip returns the starting offset of the pointed node"
@@ -187,24 +182,21 @@
               (if ((some-fn string? (comp opening-tag? tag))
                    (z/node zip)) 2)))))
 
-
-;; deeply broken section ^_^
 (defn opening-paren
   "Returns a new zip pointing to the opening paren of the currently focused expression"
   [zip]
-  (if (string? (z/node zip))
-    (recur (z/up zip))
-    (if (opening-tag? (tag zip))
-      (if (z/left (z/up zip))
-       (let [prev-node (z/left (z/up zip))]
-         (if ((every-pred opening-tag (complement starting-tag?)) (tag prev-node))
-           (z/down prev-node)
-           (recur prev-node))))
-      (if (opening-tag? (tag (z/leftmost zip)))
-       (z/down (z/leftmost zip))
-       (if (z/up zip)
-         (recur (z/up zip)))))))
+  (if zip
+    (if (opening-tag? (tag (z/leftmost zip)))
+      (if (= (z/path zip) (z/path (z/leftmost zip)))
+        (loop [p (z/up zip)]
+          (if (opening-tag? (tag (z/leftmost p)))
+            (z/leftmost p)
+            (if-not (z/root? p)
+              (recur (z/up p)))))
+        (z/leftmost zip))
+      (recur (z/up zip)))))
 
+;; fix this
 (defn closing-paren
   "Returns a new zip pointing to the closing paren of the currently focused expression"
   [zip]
@@ -239,3 +231,28 @@
       (if (= (closing-tag type) (tag p-paren))
         p-paren
         (recur (closing-paren (z/next p-paren)))))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

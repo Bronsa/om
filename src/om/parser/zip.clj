@@ -131,6 +131,7 @@
         (if (prev-node p)
          (recur (prev-node p))))))
 
+;; broken ._.
 (defn insert-left [tree node]
   (let [path (path tree)
         pos (last path)]
