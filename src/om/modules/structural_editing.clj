@@ -27,7 +27,7 @@
   (let [current-node (node-from-offset tree off)]
     (if (in-string-body? current-node)
       [(escape-str (opening-str type)) off 0]
-      [(str (opening-str type) (closing-str type) off 0 (+ off (.length (opening-str type))))])))
+      [(str (opening-str type) (closing-str type)) off 0 (+ off (.length (opening-str type)))])))
 
 (defn close-pair [tree off type]
   (let [current-node (node-from-offset tree off)]))
