@@ -143,7 +143,7 @@
     (recur (z/up zip))
     (#{:string-body :close-string :close-regex} (tag zip))))
 
-(defn string-body?
+(defn in-string-body?
   "Checks if the cursor is inside a string/regex body"
   [zip]
   (#{:string-body} (in-string? zip)))
