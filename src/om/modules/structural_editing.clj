@@ -1,7 +1,7 @@
 (ns om.modules.structural-editing
   (:use om.parser
         om.parser.utils
-        #_clojure.core.incubator)
+        clojure.core.incubator)
   (:require [om.parser.zip :as z]
             [om.parser.grammar :as g]))
 
