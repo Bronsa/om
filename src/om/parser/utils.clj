@@ -196,22 +196,19 @@
         (z/leftmost zip))
       (recur (z/up zip)))))
 
-;; fix this
 (defn closing-paren
   "Returns a new zip pointing to the closing paren of the currently focused expression"
   [zip]
-  (if (string? (z/node zip))
-    (recur (z/up zip))
-    (if (opening-tag? (tag zip))
-      (if (z/left (z/up zip))
-       (let [prev-node (z/left (z/up zip))]
-         (if (closing-tag? (tag prev-node))
-           (z/down prev-node)
-           (recur prev-node))))
-      (if (closing-tag? (tag (z/rightmost zip)))
-       (z/down (z/rightmost zip))
-       (if (z/up zip)
-         (recur (z/up zip)))))))
+  (if zip
+    (if (opening-tag? (tag (z/leftmost zip)))
+      (if (= (z/path zip) (z/path (z/leftmost zip)))
+        (loop [p (z/up zip)]
+          (if (closing-tag? (tag (z/rightmost p)))
+            (z/rightmost p)
+            (if-not (z/root? p)
+              (recur (z/up p)))))
+        (z/rightmost zip))
+      (recur (z/up zip)))))
 
 (defn prev-matching-opening-paren
   "Returns a new zip pointing to the closing paren of the specified type if the focused expression is inside it"
@@ -222,7 +219,6 @@
         p-paren
         (recur (opening-paren (z/up p-paren)))))))
 
-;; bbbbroken
 (defn next-matching-closing-paren
   "Returns a new zip pointing to the closing paren of the specified type if the focused expression is inside it"
   [zip type]
@@ -230,29 +226,4 @@
     (if p-paren
       (if (= (closing-tag type) (tag p-paren))
         p-paren
-        (recur (closing-paren (z/next p-paren)))))))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        (recur (closing-paren (z/up p-paren)))))))
