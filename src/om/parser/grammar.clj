@@ -2,7 +2,7 @@
   (:require [net.cgrand.parsley :as p]))
 
 (def parser-grammar
-  {:expr- #{:pairs :numbers :keyword :symbol :quote :meta :deprecated-meta :deref :syntax-quote :var :anon-arg :char :unquote :unquote-splicing :read-eval}
+  {:expr- #{:pairs :numbers :keyword :symbol :quote :meta :deprecated-meta :deref :syntax-quote :var :char :unquote :unquote-splicing :read-eval}
    :pairs- #{:list :vector :map :set :fn-literal :string :regex :record-vector-literal :record-map-literal}
    :numbers- #{:int :float :ratio}
    :space #{:whitespace :comment :discard}
@@ -61,10 +61,10 @@
    :unquote [:start-unquote :expr]
    :start-unquote-splicing "~@"
    :unquote-splicing [:start-unquote-splicing :expr]
-   :anon-arg #"%[0-9]*"
    :symbol #"(?:(dec|inc|\+|-|\*)')|(?:[-+](?![0-9])[^^(\[#{\\\"~%:,\s;@`')\]}]*)|(?:[^^(\[#{\\\"~%:,\s;@`')\]}\-+;0-9][^^(\[#{\\\"~%:,\s;@`')\]}]*)#?"
    :start-keyword #":{1,2}"
    :keyword-body #"[^(\[{'^@`~\"\\,\s;)\]}]"
    :keyword (p/unspaced :start-keyword :keyword-body)
    :start-read-eval "#="
    :read-eval [:start-read-eval :expr]})
+
