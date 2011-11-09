@@ -25,12 +25,30 @@
 
 (defn insert-pair [tree off type]
   (let [current-node (node-from-offset tree off)]
-    (if (in-string-body? current-node)
+    (if (in-string? current-node)
       [(escape-str (opening-str type)) off 0]
       [(str (opening-str type) (closing-str type)) off 0 (+ off (.length (opening-str type)))])))
 
+(defn- remove-spaces [node]
+  (if (#{:whitespace} (tag node))
+    ["" (starting-offset node) (:length (z/node node))]))
+
 (defn close-pair [tree off type]
-  (let [current-node (node-from-offset tree off)]))
+  (let [current-node (node-from-offset tree off)]
+    (if (in-string? current-node)
+      [(escape-str (closing-str type)) off 0]
+      (if-let [closing-node-path (z/path (next-matching-closing-paren current-node type))]
+        (loop [curr (closing-paren current-node) ret [] removed 0]
+          (let [edits (remove-spaces (z/prev curr))]
+            (if (= (z/path curr) closing-node-path)
+              (if edits
+                (conj ret (conj (update-in edits [2] #(- % removed)) (next-offset curr)))
+                (conj ret ["" 0 0 (- (next-offset curr) removed)]))
+              (if edits
+                (recur (-?> curr z/next closing-paren)
+                       (conj ret (update-in edits [1] #(- % removed)))
+                       (+ removed (last edits)))
+                (recur (-?> curr z/next closing-paren) ret removed)))))))))
 
 (defn encapsulate-right-expr [tree off]
   (let [current-node (node-from-offset tree off)]))

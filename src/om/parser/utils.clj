@@ -63,27 +63,31 @@
             new-loc (-> zip z/down (z/right pos))]
         (recur new-loc new-off)))))
 
-(defn node-from-offset [tree offset]
+(defn node-from-offset
   "Given a tree and an offset, returns a zip pointing to the node corresponding to the offset."
+  [tree offset]
   (if-not (<= (:length tree) offset)
     (zoom-in (z/zip tree) (inc offset))))
 
-(defn starting-offset [zip]
+(defn starting-offset
   "Given a zip returns the starting offset of the pointed node"
+  [zip]
   (if zip
     (loop [z (z/up zip) pos (last (z/path zip)) off 0]
       (if (z/root? z)
         (apply + off (take pos (:tokens-length (z/node z))))
         (recur (z/up z) (last (z/path z)) (apply + off (take pos (:tokens-length (z/node z)))))))))
 
-(defn next-offset [zip]
+(defn next-offset
   "Returns the starting offset of the next node"
+  [zip]
   (if (string? (z/node zip))
     (recur (z/up zip))
     (starting-offset (z/next zip))))
 
-(defn prev-offset [zip]
+(defn prev-offset
   "Returns the starting offset of the previous node"
+  [zip]
   (if (string? (z/node zip))
     (recur (z/up zip))
     (starting-offset (z/prev zip))))
