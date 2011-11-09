@@ -5,26 +5,33 @@
   (:require [om.parser.zip :as z]
             [om.parser.grammar :as g]))
 
-(defn next-word [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn next-word [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn prev-word [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn prev-word [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn split-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn split-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn join-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn join-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn splice-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn splice-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn wrap-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn wrap-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn insert-pair [tree off type]
-  (let [current-node (node-from-offset tree off)]
+(defn insert-pair [buff off type]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]
     (if (in-string? current-node)
       [(escape-str (opening-str type)) off 0]
       [(str (opening-str type) (closing-str type)) off 0 (+ off (.length (opening-str type)))])))
@@ -33,8 +40,9 @@
   (if (#{:whitespace} (tag node))
     ["" (starting-offset node) (:length (z/node node))]))
 
-(defn close-pair [tree off type]
-  (let [current-node (node-from-offset tree off)]
+(defn close-pair [buff off type]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]
     (if (in-string? current-node)
       [(escape-str (closing-str type)) off 0]
       (if-let [closing-node-path (z/path (next-matching-closing-paren current-node type))]
@@ -45,19 +53,23 @@
                 (conj ret (conj (update-in edits [2] #(- % removed)) (next-offset curr)))
                 (conj ret ["" 0 0 (- (next-offset curr) removed)]))
               (if edits
-                (recur (-?> curr z/next closing-paren)
+                (recur (-> curr z/next closing-paren)
                        (conj ret (update-in edits [1] #(- % removed)))
                        (+ removed (last edits)))
-                (recur (-?> curr z/next closing-paren) ret removed)))))))))
+                (recur (-> curr z/next closing-paren) ret removed)))))))))
 
-(defn encapsulate-right-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn encapsulate-right-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn decapsulate-right-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn decapsulate-right-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn encapsulate-left-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn encapsulate-left-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
 
-(defn decapsulate-left-expr [tree off]
-  (let [current-node (node-from-offset tree off)]))
+(defn decapsulate-left-expr [buff off]
+  (let [tree (buffer-tree buff)
+        current-node (node-from-offset tree off)]))
