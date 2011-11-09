@@ -166,7 +166,9 @@
   "Returns a keyword matching the collection type given the a closing or an opening tag"
   [tag]
   (if tag
-    (keyword (apply str (rest (.split (str tag) "-"))))))
+    (let [k (keyword (apply str (interpose "-" (rest (.split (str tag) "-")))))]
+      (if-not (#{(keyword "")} k)
+        k))))
 
 (defn opening-str
   "Returns a string representation of the opening paren of the specified type (type must be a valid keyword type)"

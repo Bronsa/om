@@ -15,7 +15,9 @@
 
 (defn split-expr [buff off]
   (let [tree (buffer-tree buff)
-        current-node (node-from-offset tree off)]))
+        current-node (node-from-offset tree off)]
+    (if-let [t (-> current-node opening-paren tag coll-type)]
+      [(str (closing-str t) (opening-str t)) off 0 (inc off)])))
 
 (defn join-expr [buff off]
   (let [tree (buffer-tree buff)

@@ -12,6 +12,9 @@
                             :make-unexpected make-unexpected})
          (reduce concat parser-grammar)))
 
+(defn buffer [text]
+  (p/edit (p/incremental-buffer parser) 0 0 text))
+
 (defn edit-buffer [buffer offset len text]
   (let [text (str (or text "") " ")]
     (p/edit (or buffer (p/incremental-buffer parser))
