@@ -7,7 +7,9 @@
    :numbers- #{:int :float :ratio}
    :space #{:whitespace :comment :discard}
    :whitespace #"(?:,|\s)+"
-   :comment #{(p/unspaced #"(?:\#\!|;)" #"[^\n]*\n?")}
+   :start-comment #"(?:\#\!|;+)"
+   :comment-body #"[^\n]*\n?"
+   :comment (p/unspaced :start-comment :comment-body)
    :start-discard "#_"
    :discard [:start-discard :expr]
    :open-list \(
