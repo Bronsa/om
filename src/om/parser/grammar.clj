@@ -31,6 +31,12 @@
    :string (p/unspaced :open-string :string-body :? :close-string)
    :open-regex "#\""
    :close-regex \"
+   :open-record-vector-literal #"#(?:[^^(\[#{\\\"~%:,\s;@`')\]}/\-+;0-9]*)\["
+   :close-record-vector-literal \]
+   :record-vector-literal [:open-record-vector-literal :expr :close-record-vector-literal]
+   :open-record-map-literal #"#(?:[^^(\[#{\\\"~%:,\s;@`')\]}/\-+;0-9]+)\{"
+   :close-record-map-literal \}
+   :record-map-literal [:open-record-map-literal :expr :close-record-map-literal]
    :regex (p/unspaced :open-regex :string-body :? :close-regex)
    :int #"(?:[-+]?(?:0(?!\.)|[1-9][0-9]*+(?!\.)|0[xX][0-9A-Fa-f]+(?!\.)|0[0-7]+(?!\.)|[1-9][0-9]?[rR][0-9A-Za-z]+(?!\.)|0[0-9]+(?!\.))(?!/))"
    :ratio #"[-+]?[0-9]+/[0-9]*"
@@ -55,13 +61,8 @@
    :unquote-splicing [:start-unquote-splicing :expr]
    :anon-arg #"%[0-9]*"
    :symbol #"(?:(dec|inc|\+|-|\*)')|(?:[-+](?![0-9])[^^(\[#{\\\"~%:,\s;@`')\]}]*)|(?:[^^(\[#{\\\"~%:,\s;@`')\]}\-+;0-9][^^(\[#{\\\"~%:,\s;@`')\]}]*)#?"
-   :open-record-vector-literal #"#(?:[^^(\[#{\\\"~%:,\s;@`')\]}/\-+;0-9]*)\["
-   :close-record-vector-literal \]
-   :open-record-map-literal #"#(?:[^^(\[#{\\\"~%:,\s;@`')\]}/\-+;0-9]+)\{"
-   :close-record-map-literal \}
-   :record-vector-literal (p/unspaced :open-record-vector-literal :expr :close-record-vector-literal)
-   :record-map-literal (p/unspaced :open-record-map-literal :expr :close-record-map-literal)
    :start-keyword #":{1,2}"
-   :keyword (p/unspaced :start-keyword #"[^(\[{'^@`~\"\\,\s;)\]}]*")
+   :keyword-body #"[^(\[{'^@`~\"\\,\s;)\]}]"
+   :keyword (p/unspaced :start-keyword :keyword-body)
    :start-read-eval "#="
    :read-eval [:start-read-eval :expr]})
