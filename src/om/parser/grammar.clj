@@ -3,7 +3,7 @@
 
 (def parser-grammar
   {:expr- #{:pairs :numbers :keyword :symbol :quote :meta :deprecated-meta :deref :syntax-quote :var :anon-arg :char :unquote :unquote-splicing :read-eval}
-   :pairs- #{:list :vector :map :set :fn-literal :string :regex} ;; lacks #k{} and #k[] syntax
+   :pairs- #{:list :vector :map :set :fn-literal :string :regex :record-vector-literal :record-map-literal}
    :numbers- #{:int :float :ratio}
    :space #{:whitespace :comment :discard}
    :whitespace #"(?:,|\s)+"
@@ -55,6 +55,12 @@
    :unquote-splicing [:start-unquote-splicing :expr]
    :anon-arg #"%[0-9]*"
    :symbol #"(?:(dec|inc|\+|-|\*)')|(?:[-+](?![0-9])[^^(\[#{\\\"~%:,\s;@`')\]}]*)|(?:[^^(\[#{\\\"~%:,\s;@`')\]}\-+;0-9][^^(\[#{\\\"~%:,\s;@`')\]}]*)#?"
+   :open-record-vector-literal #"#(?:[^^(\[#{\\\"~%:,\s;@`')\]}/\-+;0-9]*)\["
+   :close-record-vector-literal \]
+   :open-record-map-literal #"#(?:[^^(\[#{\\\"~%:,\s;@`')\]}/\-+;0-9]+)\{"
+   :close-record-map-literal \}
+   :record-vector-literal (p/unspaced :open-record-vector-literal :expr :close-record-vector-literal)
+   :record-map-literal (p/unspaced :open-record-map-literal :expr :close-record-map-literal)
    :start-keyword #":{1,2}"
    :keyword (p/unspaced :start-keyword #"[^(\[{'^@`~\"\\,\s;)\]}]*")
    :start-read-eval "#="
