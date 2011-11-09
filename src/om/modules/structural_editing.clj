@@ -50,11 +50,11 @@
           (let [edits (remove-spaces (z/prev curr))]
             (if (= (z/path curr) closing-node-path)
               (if edits
-                (conj ret (conj (update-in edits [2] #(- % removed)) (next-offset curr)))
+                (conj ret (conj (update-in edits [2] #(- % removed)) (next-offset curr))) ;; this trick is to avoid node-from-offset to reparse the buffer each time
                 (conj ret ["" 0 0 (- (next-offset curr) removed)]))
               (if edits
                 (recur (-> curr z/next closing-paren)
-                       (conj ret (update-in edits [1] #(- % removed)))
+                       (conj ret (update-in edits [1] #(- % removed))) ;; same here
                        (+ removed (last edits)))
                 (recur (-> curr z/next closing-paren) ret removed)))))))))
 

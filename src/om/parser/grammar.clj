@@ -40,9 +40,9 @@
    :start-quote \'
    :quote [:start-quote :expr]
    :start-meta \^
-   :meta [:start-meta :expr #_:expr] ;;second expr is the one with the first expr as meta applied to it|| DURR THIS WAY EVERYTHING GETS BROKEN
+   :meta [:start-meta :expr]
    :start-deprecated-meta "#^"
-   :deprecated-meta [:start-deprecated-meta :expr #_:expr]
+   :deprecated-meta [:start-deprecated-meta :expr]
    :start-syntax-quote \`
    :syntax-quote [:start-syntax-quote :expr]
    :start-deref \@
@@ -54,7 +54,7 @@
    :start-unquote-splicing "~@"
    :unquote-splicing [:start-unquote-splicing :expr]
    :anon-arg #"%[0-9]*"
-   :symbol #"(?:[-+](?![0-9])[^^(\[#{\\\"~%:,\s;'@`)\]}]*)|(?:[^^(\[#{\\\"~%:,\s;'@`)\]}\-+;0-9][^^(\[#{\\\"~%:,\s;'@`)\]}]*)#?"
+   :symbol #"(?:(dec|inc|\+|-|\*)')|(?:[-+](?![0-9])[^^(\[#{\\\"~%:,\s;@`')\]}]*)|(?:[^^(\[#{\\\"~%:,\s;@`')\]}\-+;0-9][^^(\[#{\\\"~%:,\s;@`')\]}]*)#?"
    :start-keyword #":{1,2}"
    :keyword (p/unspaced :start-keyword #"[^(\[{'^@`~\"\\,\s;)\]}]*")
    :start-read-eval "#="
