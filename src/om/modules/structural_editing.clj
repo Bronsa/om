@@ -41,7 +41,7 @@
 
 (defn- remove-spaces [node]
   (if (#{:whitespace} (tag node))
-    ["" (starting-offset node) (:length (z/node node))]))
+    ["" (starting-offset node) (length (z/node node))]))
 
 (defn close-pair [buff off type]
   (let [tree (buffer-tree buff)
@@ -49,17 +49,16 @@
     (if (in-string? current-node)
       [(escape-str (closing-str type)) off 0]
       (if-let [closing-node-path (z/path (next-matching-closing-paren current-node type))]
-        (loop [curr (closing-paren current-node) ret [] removed 0]
+        (loop [curr (closing-paren current-node) ret []]
           (let [edits (remove-spaces (z/prev curr))]
             (if (= (z/path curr) closing-node-path)
               (if edits
-                (conj ret (conj (update-in edits [2] #(- % removed)) (next-offset curr))) ;; this trick is to avoid node-from-offset to reparse the buffer each time
-                (conj ret ["" 0 0 (- (next-offset curr) removed)]))
+                (conj ret (conj edits (next-offset curr)))
+                (conj ret ["" 0 0 (next-offset curr)]))
               (if edits
-                (recur (-> curr z/next closing-paren)
-                       (conj ret (update-in edits [1] #(- % removed))) ;; same here
-                       (+ removed (last edits)))
-                (recur (-> curr z/next closing-paren) ret removed)))))))))
+                (recur (-> curr z/prev z/remove adjust-lengths z/next closing-paren)
+                       (conj ret edits))
+                (recur (-> curr z/next closing-paren) ret)))))))))
 
 (defn encapsulate-right-expr [buff off]
   (let [tree (buffer-tree buff)

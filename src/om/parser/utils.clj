@@ -10,8 +10,8 @@
   (cond
    (string? c) c
    (and (vector? (:content c))
-        (= :string-body (:tag (get (:content c) 1 nil)))
-        (not (closing-tag? (:tag (get (:content c) 2 nil)))))
+        (= :string-body (:tag (get (:content c) 1)))
+        (not (closing-tag? (:tag (get (:content c) 2)))))
    (let [c (:content c)
          frst (str (first (:content (first c))) (first (:content (second c))))
          lst (first (:content (last c)))
@@ -20,44 +20,44 @@
    :else
    (apply str (map tree-to-str (:content c)))))
 
-(defrecord Node [tag content tokens-length length]
+(defrecord Node [tag content length]
   Object
   (toString [this]
-    (let [s (tree-to-str this)]
-      (.substring s 0 (dec (.length s)))))) ;; ugly hack
+    (tree-to-str this)))
 
 (defn make-node [t c]
-  (let [t (if (#{:net.cgrand.parsley/unfinished} t) :uncomplete t)
-        [len tok-len] (lengths c)]
-    (Node. t c tok-len len)))
+  (let [t (if (#{:net.cgrand.parsley/unfinished} t) :uncomplete t)]
+    (Node. t c (lengths c))))
 
 (defn make-unexpected [l]
   (make-node :unexpected [l]))
 
-(defn tok-length
+(defn length
   "Return token lenght"
   [tok]
   (if (string? tok)
     (.length ^String tok)
-    (:length tok 0)))
+    (apply + (:length tok 0))))
 
 (defn lengths
   "Return a vector with the lenghts of sub-expressions"
   [c]
-  (let [tok-l (map tok-length c)]
-    [(apply + tok-l) tok-l]))
+  (map length c))
+
+(def content-string?
+  (comp string? first :content))
 
 (defn- aim [node off]
-  (let [sums (reductions + (:tokens-length node))]
+  (let [sums (reductions + (:length node))]
     (loop [s sums i 0 p 0]
       (if (< (first s) off)
         (recur (rest s) (inc i) (first s))
         [i (- off p)]))))
 
 (defn- zoom-in [zip offset]
-  (if (string? (z/node (z/down zip)))
+  (if (content-string? (z/node zip))
     zip
-    (if (= (count (:tokens-length (z/node zip))) 1)
+    (if (= (count (:length (z/node zip))) 1)
       (recur (z/down zip) offset)
       (let [[pos new-off] (aim (z/node zip) offset)
             new-loc (-> zip z/down (z/right pos))]
@@ -66,7 +66,7 @@
 (defn node-from-offset
   "Given a tree and an offset, returns a zip pointing to the node corresponding to the offset."
   [tree offset]
-  (if-not (<= (:length tree) offset)
+  (if-not (<= (length tree) offset)
     (zoom-in (z/zip tree) (inc offset))))
 
 (defn starting-offset
@@ -75,29 +75,23 @@
   (if zip
     (loop [z (z/up zip) pos (last (z/path zip)) off 0]
       (if (z/root? z)
-        (apply + off (take pos (:tokens-length (z/node z))))
-        (recur (z/up z) (last (z/path z)) (apply + off (take pos (:tokens-length (z/node z)))))))))
+        (apply + off (take pos (:length (z/node z))))
+        (recur (z/up z) (last (z/path z)) (apply + off (take pos (:length (z/node z)))))))))
 
 (defn next-offset
   "Returns the starting offset of the next node"
   [zip]
-  (if (string? (z/node zip))
-    (recur (z/up zip))
-    (starting-offset (z/next zip))))
+  (starting-offset (z/next zip)))
 
 (defn prev-offset
   "Returns the starting offset of the previous node"
   [zip]
-  (if (string? (z/node zip))
-    (recur (z/up zip))
-    (starting-offset (z/prev zip))))
+  (starting-offset (z/prev zip)))
 
 (defn tag
   "Return the tag of the currently selected node in a zip"
   [zip]
-  (if (string? (z/node zip))
-    (recur (z/up zip))
-    (:tag (z/node zip))))
+  (:tag (z/node zip)))
 
 (defn opening-tag?
   "Check if tag is a pair opener"
@@ -143,9 +137,7 @@
 (defn in-string?
   "Checks if the cursor is inside a string/regex body, or selecting their closing paren"
   [zip]
-  (if (string? (z/node zip))
-    (recur (z/up zip))
-    (#{:string-body :close-string :close-regex} (tag zip))))
+  (#{:string-body :close-string :close-regex} (tag zip)))
 
 (defn in-string-body?
   "Checks if the cursor is inside a string/regex body"
@@ -185,7 +177,7 @@
   [zip]
   (#{:uncomplete}
    (tag (z/up zip
-              (if ((some-fn string? (comp opening-tag? tag))
+              (if ((comp starting-or-opening-tag? tag)
                    (z/node zip)) 2)))))
 
 (defn opening-paren
@@ -233,3 +225,12 @@
       (if (= (closing-tag type) (tag p-paren))
         p-paren
         (recur (closing-paren (z/up p-paren)))))))
+
+(defn adjust-lengths
+  "Given a node, walk up to the root adjusting the node lenght, to be used after a tree edit"
+  [node]
+  (let [p (z/path node)]
+    (loop [c (z/up node)]
+      (if (z/up c)
+        (recur (z/up (assoc-in c (concat (z/path c) [:length]) (map length (:content (z/node c))))))
+        (z/update-path (assoc-in c [:length] (map length (:content c))) p)))))

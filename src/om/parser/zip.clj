@@ -1,8 +1,6 @@
 (ns om.parser.zip
   (:refer-clojure :exclude [remove next]))
 
-;; TODO optimize with selection cache
-
 (defn update-path [tree path]
   (if tree
    (with-meta tree {:path (vec path)})))
@@ -29,7 +27,8 @@
   (:path (meta tree)))
 
 (defn branch? [node]
-  (:content node))
+  (and (:content node)
+       (not (string? (first (:content node))))))
 
 (defn node [tree]
   (loop [t tree p (path tree)]
@@ -110,38 +109,29 @@
         t)
       (up tree))))
 
-;; (defdir next [tree]
-;;   (if-not (= (path tree) (path (inferior tree)))
-;;     (inferior tree)
-;;     (loop [t (up tree)]
-;;       (if (right t)
-;;         (inferior (right t))
-;;         (if (up t)
-;;           (recur (up t)))))))
-
 (defdir next [tree]
   (loop [p (next-node tree)]
-    (if (string? (node (down p))) p
+    (if (string? (first (:content (node p)))) p
         (if (next-node p)
          (recur (next-node p))))))
 
 (defdir prev [tree]
   (loop [p (prev-node tree)]
-    (if (string? (node (down p))) p
+    (if (string? (first (:content (node p)))) p
         (if (prev-node p)
          (recur (prev-node p))))))
 
-;; broken ._.
 (defn insert-left [tree node]
   (let [path (path tree)
         pos (last path)]
-    (update-path
-     (update-in tree (butlast path)
-                (fn [old] (vec (concat (take pos old) [node] (drop pos old)))))
-     path)))
+    (update-in tree (butlast path)
+               (fn [old] (vec (concat (take pos old) [node] (drop pos old)))))))
 
 (defn insert-right [tree node]
-  (insert-left (right tree) node))
+  (let [path (path tree)
+        pos (last path)]
+    (update-in tree (butlast path)
+               (fn [old] (vec (concat (take pos old) [node] (drop pos old)))))))
 
 (defn remove [tree]
   (let [path (path tree)

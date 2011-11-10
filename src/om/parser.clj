@@ -16,7 +16,7 @@
   (p/edit (p/incremental-buffer parser) 0 0 text))
 
 (defn edit-buffer [buffer offset len text]
-  (let [text (str (or text "") " ")]
+  (let [text (or text "")]
     (p/edit (or buffer (p/incremental-buffer parser))
             offset len text)))
 
@@ -24,4 +24,4 @@
   (p/parse-tree buffer))
 
 (defn parse [^String text]
-  (parser (str text " ")))
+  (parser text))

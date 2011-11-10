@@ -8,7 +8,7 @@
    :space #{:whitespace :comment :discard}
    :whitespace #"(?:,|\s)+"
    :start-comment #"(?:\#\!|;+)"
-   :comment-body #"[^\n]*\n?"
+   :comment-body #"[^\n]*\n"
    :comment (p/unspaced :start-comment :comment-body)
    :start-discard "#_"
    :discard [:start-discard :expr]
@@ -44,7 +44,8 @@
    :ratio #"[-+]?[0-9]+/[0-9]*"
    :float #"[-+]?[0-9]+\.[0-9]*+(?:[eE][-+]?+[0-9]+)?+M?"
    :start-char \\
-   :char (p/unspaced :start-char #"(?:newline|space|tab|backspace|formfeed|return|u[0-9|a-f|A-F]{4}|o[0-3]?+[0-7]{1,2}|.)")
+   :char-body #"(?:newline|space|tab|backspace|formfeed|return|u[0-9|a-f|A-F]{4}|o[0-3]?+[0-7]{1,2}|.)"
+   :char (p/unspaced :start-char :char-body)
    :start-quote \'
    :quote [:start-quote :expr]
    :start-meta \^
@@ -61,10 +62,9 @@
    :unquote [:start-unquote :expr]
    :start-unquote-splicing "~@"
    :unquote-splicing [:start-unquote-splicing :expr]
-   :symbol #"(?:(dec|inc|\+|-|\*)')|(?:[-+](?![0-9])[^^(\[#{\\\"~%:,\s;@`')\]}]*)|(?:[^^(\[#{\\\"~%:,\s;@`')\]}\-+;0-9][^^(\[#{\\\"~%:,\s;@`')\]}]*)#?"
+   :symbol #"(?:(dec|inc|\+|-|\*)')|(?:[-+](?![0-9])[^^(\[#{\\\"~%:,\s;@`')\]}]*)|(?:[^^(\[#{\\\"~%:,\s;@`')\]}/\-+;0-9][^^(\[#{\\\"~%:,\s;@`')\]}]*)#?"
    :start-keyword #":{1,2}"
    :keyword-body #"[^(\[{'^@`~\"\\,\s;)\]}]"
    :keyword (p/unspaced :start-keyword :keyword-body)
    :start-read-eval "#="
    :read-eval [:start-read-eval :expr]})
-
